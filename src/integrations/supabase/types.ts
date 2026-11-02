@@ -14,16 +14,240 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      appointments: {
+        Row: {
+          appointment_date: string
+          appointment_time: string
+          created_at: string
+          customer_email: string
+          customer_name: string
+          customer_phone: string
+          id: string
+          notes: string | null
+          reference: string
+          service_ids: string[]
+          service_names: string[]
+          status: Database["public"]["Enums"]["appointment_status"]
+          stylist_id: string
+          total_duration: number
+          total_price: number
+        }
+        Insert: {
+          appointment_date: string
+          appointment_time: string
+          created_at?: string
+          customer_email: string
+          customer_name: string
+          customer_phone: string
+          id?: string
+          notes?: string | null
+          reference: string
+          service_ids: string[]
+          service_names: string[]
+          status?: Database["public"]["Enums"]["appointment_status"]
+          stylist_id: string
+          total_duration: number
+          total_price: number
+        }
+        Update: {
+          appointment_date?: string
+          appointment_time?: string
+          created_at?: string
+          customer_email?: string
+          customer_name?: string
+          customer_phone?: string
+          id?: string
+          notes?: string | null
+          reference?: string
+          service_ids?: string[]
+          service_names?: string[]
+          status?: Database["public"]["Enums"]["appointment_status"]
+          stylist_id?: string
+          total_duration?: number
+          total_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "appointments_stylist_id_fkey"
+            columns: ["stylist_id"]
+            isOneToOne: false
+            referencedRelation: "stylists"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      contact_submissions: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          message: string
+          name: string
+          phone: string | null
+          subject: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          message: string
+          name: string
+          phone?: string | null
+          subject: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          message?: string
+          name?: string
+          phone?: string | null
+          subject?: string
+        }
+        Relationships: []
+      }
+      salon_settings: {
+        Row: {
+          booking_window_days: number
+          close_time: string
+          closed_weekdays: number[]
+          id: number
+          open_time: string
+          slot_times: string[]
+          updated_at: string
+        }
+        Insert: {
+          booking_window_days?: number
+          close_time?: string
+          closed_weekdays?: number[]
+          id?: number
+          open_time?: string
+          slot_times?: string[]
+          updated_at?: string
+        }
+        Update: {
+          booking_window_days?: number
+          close_time?: string
+          closed_weekdays?: number[]
+          id?: number
+          open_time?: string
+          slot_times?: string[]
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      services: {
+        Row: {
+          category: string
+          created_at: string
+          description: string
+          duration_minutes: number
+          id: string
+          image_key: string
+          is_active: boolean
+          name: string
+          price: number
+          slug: string
+          sort_order: number
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          description: string
+          duration_minutes: number
+          id?: string
+          image_key: string
+          is_active?: boolean
+          name: string
+          price: number
+          slug: string
+          sort_order?: number
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string
+          duration_minutes?: number
+          id?: string
+          image_key?: string
+          is_active?: boolean
+          name?: string
+          price?: number
+          slug?: string
+          sort_order?: number
+        }
+        Relationships: []
+      }
+      stylists: {
+        Row: {
+          created_at: string
+          experience_years: number
+          id: string
+          image_key: string
+          is_active: boolean
+          name: string
+          role: string
+          sort_order: number
+          specialty: string
+        }
+        Insert: {
+          created_at?: string
+          experience_years?: number
+          id?: string
+          image_key: string
+          is_active?: boolean
+          name: string
+          role: string
+          sort_order?: number
+          specialty: string
+        }
+        Update: {
+          created_at?: string
+          experience_years?: number
+          id?: string
+          image_key?: string
+          is_active?: boolean
+          name?: string
+          role?: string
+          sort_order?: number
+          specialty?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      book_appointment: {
+        Args: {
+          _date: string
+          _email: string
+          _name: string
+          _notes: string
+          _phone: string
+          _service_ids: string[]
+          _stylist_id: string
+          _time: string
+        }
+        Returns: {
+          reference: string
+          stylist_id: string
+          stylist_name: string
+          total_duration: number
+          total_price: number
+        }[]
+      }
+      get_booked_slots: {
+        Args: { _date: string }
+        Returns: {
+          appointment_time: string
+          stylist_id: string
+        }[]
+      }
     }
     Enums: {
-      [_ in never]: never
+      appointment_status: "pending" | "confirmed" | "cancelled" | "completed"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +374,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      appointment_status: ["pending", "confirmed", "cancelled", "completed"],
+    },
   },
 } as const
