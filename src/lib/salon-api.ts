@@ -80,7 +80,7 @@ export function unavailableSlots(opts: {
 }): Set<string> {
   const out = new Set<string>();
   for (const t of opts.slots) {
-    const [h, m] = t.split(":").map(Number);
+    const [h = 0, m = 0] = t.split(":").map(Number);
     if (opts.isToday && h * 60 + m <= opts.nowMinutes) {
       out.add(t);
       continue;

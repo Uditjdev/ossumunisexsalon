@@ -180,7 +180,7 @@ function Home() {
         <div className="grid grid-cols-3 gap-1 md:grid-cols-6">
           {["hair-color", "mens", "bridal", "hair-styling", "facial", "interior"].map((k) => (
             <a key={k} href={site.social.instagram} target="_blank" rel="noreferrer" className="group relative aspect-square overflow-hidden" aria-label="View on Instagram">
-              <img src={images[k]} alt="" loading="lazy" width={1024} height={1280} className="img-zoom h-full w-full object-cover group-hover:scale-110" />
+              <img src={images[k as keyof typeof images]} alt="" loading="lazy" width={1024} height={1280} className="img-zoom h-full w-full object-cover group-hover:scale-110" />
               <div className="absolute inset-0 flex items-center justify-center bg-charcoal/0 transition group-hover:bg-charcoal/40">
                 <Instagram className="size-6 text-ivory opacity-0 transition group-hover:opacity-100" />
               </div>

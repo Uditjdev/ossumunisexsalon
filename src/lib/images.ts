@@ -11,7 +11,7 @@ import s2 from "@/assets/stylist-2.jpg";
 import s3 from "@/assets/stylist-3.jpg";
 import s4 from "@/assets/stylist-4.jpg";
 
-export const images: Record<string, string> = {
+export const images = {
   hero,
   interior,
   "hair-color": hairColor,
@@ -24,6 +24,6 @@ export const images: Record<string, string> = {
   "stylist-2": s2,
   "stylist-3": s3,
   "stylist-4": s4,
-};
+} as const;
 
-export const img = (key: string) => images[key] ?? interior;
+export const img = (key: string): string => (images as Record<string, string>)[key] ?? interior;
