@@ -1,5 +1,5 @@
 # Remaining priority tasks
 
-- [ ] Verify and repair Book Appointment navigation and the complete booking flow.
-- [ ] Resolve remaining booking type and error-handling issues.
-- [ ] Check all salon pages and run regression tests.
+- [x] Verify and repair Book Appointment navigation and the complete booking flow.
+- [x] Resolve remaining booking type and error-handling issues.
+- [x] Check all salon pages and run regression tests.
