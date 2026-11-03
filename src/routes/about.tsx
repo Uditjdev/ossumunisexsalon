@@ -13,6 +13,8 @@ export const Route = createFileRoute("/about")({
       { name: "description", content: "Our story, philosophy and the expert team behind Aura Unisex Salon. Premium products and uncompromising hygiene." },
       { property: "og:title", content: "About Aura Unisex Salon" },
       { property: "og:description", content: "The story, philosophy and artists behind Aura." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   component: About,

@@ -19,6 +19,8 @@ export const Route = createFileRoute("/contact")({
       { name: "description", content: "Call, WhatsApp or visit Aura Unisex Salon. Find our address, opening hours and send us a message." },
       { property: "og:title", content: "Contact Aura Unisex Salon" },
       { property: "og:description", content: "Get in touch — we'd love to hear from you." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   component: Contact,
@@ -49,13 +51,14 @@ function Contact() {
     }
     setErrors({});
     setStatus("sending");
-    const { error } = await supabase.from("contact_submissions").insert({ ...r.data, phone: r.data.phone || null });
-    if (error) {
+    try {
+      const { error } = await supabase.from("contact_submissions").insert({ ...r.data, phone: r.data.phone || null });
+      if (error) throw error;
+      setStatus("done");
+    } catch {
       setStatus("idle");
       toast.error("Something went wrong. Please try again or WhatsApp us.");
-      return;
     }
-    setStatus("done");
   };
 
   const field = (k: keyof Form, label: string, type = "text") => (

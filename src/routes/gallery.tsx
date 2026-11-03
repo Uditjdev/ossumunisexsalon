@@ -12,6 +12,8 @@ export const Route = createFileRoute("/gallery")({
       { name: "description", content: "Hair transformations, colour, men's grooming, bridal looks and our salon interiors." },
       { property: "og:title", content: "Gallery — Aura Unisex Salon" },
       { property: "og:description", content: "A look inside Aura: transformations, bridal looks and our salon." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   component: Gallery,

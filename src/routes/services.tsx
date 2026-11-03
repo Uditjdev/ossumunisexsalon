@@ -14,6 +14,8 @@ export const Route = createFileRoute("/services")({
       { name: "description", content: "Hair, skin, men's grooming and bridal makeup services with prices in ₹ and durations. Book any service online." },
       { property: "og:title", content: "Services & Prices — Aura Unisex Salon" },
       { property: "og:description", content: "Explore our full menu of hair, beauty, grooming and bridal services." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   component: ServicesPage,
