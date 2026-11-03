@@ -15,6 +15,8 @@ export const Route = createFileRoute("/")({
       { name: "description", content: "Luxury unisex salon offering hair styling, colour, spa, facials, bridal makeup and men's grooming. Book online in minutes." },
       { property: "og:title", content: "Aura Unisex Salon — Luxury Hair, Beauty & Grooming" },
       { property: "og:description", content: "Exceptional hair, beauty and grooming services designed around you." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   component: Home,
