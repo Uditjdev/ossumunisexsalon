@@ -13,17 +13,18 @@ import { bookedSlotsQuery, servicesQuery, settingsQuery, stylistsQuery, unavaila
 import { formatDuration, formatSlot, inr, whatsappLink } from "@/config/site";
 import { img } from "@/lib/images";
 import { cn } from "@/lib/utils";
+import { salonClock } from "@/lib/booking-clock";
 
 export const Route = createFileRoute("/book")({
-  validateSearch: (s: Record<string, unknown>): { service?: string } => ({
-    service: typeof s.service === "string" ? s.service : undefined,
-  }),
+  validateSearch: z.object({ service: z.string().optional().catch(undefined) }),
   head: () => ({
     meta: [
       { title: "Book an Appointment — Aura Unisex Salon" },
       { name: "description", content: "Choose your services, stylist, date and time and book your Aura appointment online." },
       { property: "og:title", content: "Book an Appointment — Aura Unisex Salon" },
       { property: "og:description", content: "Book your salon appointment online in under a minute." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   component: Book,
@@ -51,7 +52,13 @@ function Book() {
   const [form, setForm] = useState({ name: "", phone: "", email: "", notes: "" });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
-  const [done, setDone] = useState<{ reference: string; stylist_name: string } | null>(null);
+  const [done, setDone] = useState<{ reference: string; stylist_name: string; date: string; time: string } | null>(null);
+  const [clock, setClock] = useState(() => salonClock());
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setClock(salonClock()), 30_000);
+    return () => window.clearInterval(timer);
+  }, []);
 
   useEffect(() => {
     const s = services.data?.find((x) => x.slug === service);
@@ -64,16 +71,15 @@ function Book() {
   const dateStr = date ? iso(date) : "";
   const booked = useQuery({ ...bookedSlotsQuery(dateStr), enabled: !!date });
   const slots = settings.data?.slot_times ?? [];
-  const now = new Date();
   const blocked = useMemo(
     () => unavailableSlots({ slots, booked: booked.data ?? [], stylistId: stylist ?? null, stylistIds: (stylists.data ?? []).map((s) => s.id),
-      isToday: dateStr === iso(now), nowMinutes: now.getHours() * 60 + now.getMinutes() }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [slots, booked.data, stylist, stylists.data, dateStr],
+      isToday: dateStr === clock.date, nowMinutes: clock.minutes }),
+    [slots, booked.data, stylist, stylists.data, dateStr, clock],
   );
   const stylistName = stylist ? stylists.data?.find((s) => s.id === stylist)?.name : "Any Available Stylist";
 
-  const canNext = [sel.length > 0, stylist !== undefined, !!date, !!time && !blocked.has(time), true, true][step];
+  const loadError = services.isError || stylists.isError || settings.isError;
+  const canNext = !loadError && [sel.length > 0, stylist !== undefined, !!date, !!time && !blocked.has(time) && !booked.isFetching && !booked.isError, true, true][step];
   const next = () => {
     if (step === 4) {
       const r = details.safeParse(form);
@@ -84,31 +90,49 @@ function Book() {
   };
 
   const confirm = async () => {
-    setBusy(true);
-    const { data, error } = await supabase.rpc("book_appointment", {
-      _service_ids: sel, _stylist_id: stylist ?? (null as unknown as string), _date: dateStr, _time: time!,
-      _name: form.name, _phone: form.phone, _email: form.email, _notes: form.notes,
-    });
-    setBusy(false);
-    if (error) {
-      if (error.message.includes("SLOT_TAKEN")) { toast.error("Sorry, that slot was just booked. Please pick another time."); booked.refetch(); setTime(null); setStep(3); }
-      else toast.error(error.message || "Booking failed. Please try again.");
+    if (busy || !time || !date || stylist === undefined || chosen.length === 0) return;
+    if (blocked.has(time) || booked.isError) {
+      toast.error("Please choose an available time.");
+      setTime(null);
+      setStep(3);
       return;
     }
-    const row = Array.isArray(data) ? data[0] : data;
-    setDone({ reference: row.reference, stylist_name: row.stylist_name });
-    window.scrollTo({ top: 0 });
+    const parsed = details.safeParse(form);
+    if (!parsed.success) { setStep(4); return; }
+    setBusy(true);
+    try {
+      const { data, error } = await supabase.rpc("book_appointment", {
+        // SQL accepts NULL for any stylist; generated argument types omit nullability.
+        _service_ids: sel, _stylist_id: stylist ?? (null as unknown as string), _date: dateStr, _time: time,
+        _name: parsed.data.name, _phone: parsed.data.phone, _email: parsed.data.email, _notes: parsed.data.notes,
+      });
+      if (error) {
+        if (error.message.includes("SLOT_TAKEN") || error.message.includes("already passed")) {
+          toast.error("That time is no longer available. Please pick another time.");
+          void booked.refetch(); setTime(null); setStep(3);
+        } else toast.error(error.message || "Booking failed. Please try again.");
+        return;
+      }
+      const row = data?.[0];
+      if (!row) { toast.error("We couldn't confirm your booking. Please contact the salon before retrying."); return; }
+      setDone({ reference: row.reference, stylist_name: row.stylist_name, date: date.toDateString(), time });
+      window.scrollTo({ top: 0 });
+    } catch {
+      toast.error("Connection interrupted. Please contact the salon to check your booking before retrying.");
+    } finally {
+      setBusy(false);
+    }
   };
 
   if (done) {
-    const msg = `Hello Aura, I've booked ${chosen.map((s) => s.name).join(", ")} on ${date?.toDateString()} at ${formatSlot(time!)}. Ref: ${done.reference}`;
+    const msg = `Hello Aura, I've booked ${chosen.map((s) => s.name).join(", ")} on ${done.date} at ${formatSlot(done.time)}. Ref: ${done.reference}`;
     return (
       <section className="container-luxe max-w-2xl pb-24 pt-36 text-center">
         <CheckCircle2 className="mx-auto size-16 text-sage" strokeWidth={1} />
         <p className="eyebrow mt-6">Booking received</p>
         <h1 className="mt-3 text-5xl md:text-6xl">See you soon, {form.name.split(" ")[0]}</h1>
         <p className="mt-4 text-muted-foreground">Reference <strong className="text-foreground">{done.reference}</strong></p>
-        <Summary rows={[["Services", chosen.map((s) => s.name).join(", ")], ["Stylist", done.stylist_name], ["Date", date!.toDateString()], ["Time", formatSlot(time!)], ["Duration", formatDuration(dur)], ["Total", inr(total)]]} />
+        <Summary rows={[["Services", chosen.map((s) => s.name).join(", ")], ["Stylist", done.stylist_name], ["Date", done.date], ["Time", formatSlot(done.time)], ["Duration", formatDuration(dur)], ["Total", inr(total)]]} />
         <div className="mt-10 flex flex-wrap justify-center gap-3">
           <Button asChild variant="luxe" size="xl"><a href={whatsappLink(msg)} target="_blank" rel="noreferrer"><MessageCircle /> Confirm on WhatsApp</a></Button>
           <Button asChild variant="luxeOutline" size="xl"><Link to="/">Back to home</Link></Button>
@@ -127,6 +151,7 @@ function Book() {
       <div className="mt-10 grid gap-10 lg:grid-cols-3">
         <div className="lg:col-span-2">
           {(services.isLoading || stylists.isLoading) && <p className="text-muted-foreground">Loading…</p>}
+          {loadError && <div role="alert" className="mb-6"><p className="text-destructive">Appointment options couldn't load. Please try again.</p><Button variant="luxeOutline" className="mt-3" onClick={() => { void services.refetch(); void stylists.refetch(); void settings.refetch(); }}>Try again</Button></div>}
           {step === 0 && (
             <div className="grid gap-3 sm:grid-cols-2">
               {services.data?.map((s) => {
@@ -158,17 +183,18 @@ function Book() {
           {step === 2 && (
             <div className="inline-block rounded-2xl border bg-card p-4">
               <Calendar mode="single" selected={date} onSelect={(d) => { setDate(d); setTime(null); }}
-                disabled={(d) => { const t = new Date(); t.setHours(0, 0, 0, 0); const max = new Date(t); max.setDate(max.getDate() + (settings.data?.booking_window_days ?? 60));
+                disabled={(d) => { const t = new Date(`${clock.date}T00:00:00`); const max = new Date(t); max.setDate(max.getDate() + (settings.data?.booking_window_days ?? 60));
                   return d < t || d > max || (settings.data?.closed_weekdays ?? []).includes(d.getDay()); }} />
             </div>
           )}
           {step === 3 && (
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
               {booked.isLoading && <p className="col-span-full text-muted-foreground">Checking availability…</p>}
+              {booked.isError && <div role="alert" className="col-span-full"><p className="text-destructive">We couldn't check availability.</p><Button variant="luxeOutline" className="mt-3" onClick={() => void booked.refetch()}>Try again</Button></div>}
               {slots.map((t) => {
                 const off = blocked.has(t);
                 return (
-                  <button key={t} disabled={off} onClick={() => setTime(t)}
+                  <button key={t} disabled={off || booked.isFetching || booked.isError} onClick={() => setTime(t)}
                     className={cn("h-14 rounded-xl border text-sm transition", off ? "cursor-not-allowed border-border text-muted-foreground line-through opacity-50" : time === t ? "border-sage bg-sage text-ivory" : "border-border bg-card hover:border-foreground")}>
                     {formatSlot(t)}
                   </button>
@@ -196,7 +222,7 @@ function Book() {
             <Summary rows={[["Services", chosen.map((s) => s.name).join(", ")], ["Stylist", stylistName ?? ""], ["Date", date?.toDateString() ?? ""], ["Time", time ? formatSlot(time) : ""], ["Duration", formatDuration(dur)], ["Total", inr(total)], ["Name", form.name], ["Mobile", form.phone], ["Email", form.email], ...(form.notes ? [["Notes", form.notes] as [string, string]] : [])]} />
           )}
           <div className="mt-10 flex gap-3">
-            {step > 0 && <Button variant="luxeOutline" size="xl" onClick={() => setStep(step - 1)}>Back</Button>}
+            {step > 0 && <Button variant="luxeOutline" size="xl" disabled={busy} onClick={() => setStep(step - 1)}>Back</Button>}
             {step < 5 ? <Button variant="luxe" size="xl" disabled={!canNext} onClick={next}>Continue</Button>
               : <Button variant="luxe" size="xl" disabled={busy} onClick={confirm}>{busy ? "Confirming…" : "Confirm Appointment"}</Button>}
           </div>
