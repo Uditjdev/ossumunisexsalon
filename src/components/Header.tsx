@@ -1,4 +1,7 @@
-import { Link, useRouterState } from "@tanstack/react-router";
+import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
+import { useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/use-auth";
 import { useEffect, useState } from "react";
 import { Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -26,7 +29,16 @@ export function Header() {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const overHero = !scrolled && pathname !== "/book" && !open;
+  const overHero = !scrolled && !["/book", "/login", "/signup", "/admin"].includes(pathname) && !open;
+  const { user, isAdmin, loading } = useAuth();
+  const navigate = useNavigate();
+  const qc = useQueryClient();
+  async function logout() {
+    await qc.cancelQueries();
+    qc.clear();
+    await supabase.auth.signOut();
+    navigate({ to: "/login", replace: true });
+  }
 
   useEffect(() => {
     const on = () => setScrolled(window.scrollY > 40);
@@ -62,6 +74,16 @@ export function Header() {
           ))}
         </nav>
         <div className="flex items-center gap-3">
+          <div className={cn("hidden items-center gap-5 text-xs uppercase tracking-[0.22em] md:flex", overHero ? "text-ivory/80" : "text-foreground/70")}>
+            {!loading && !user && (
+              <>
+                <Link to="/login" className="hover:opacity-100">Login</Link>
+                <Link to="/signup" className="hover:opacity-100">Signup</Link>
+              </>
+            )}
+            {user && isAdmin && <Link to="/admin" className="hover:opacity-100" activeProps={{ className: "!opacity-100 underline underline-offset-8 decoration-champagne" }}>Appointments</Link>}
+            {user && <button onClick={logout} className="uppercase tracking-[0.22em] hover:opacity-100">Logout</button>}
+          </div>
           <Button asChild variant={overHero ? "champagne" : "luxe"} size="lg" className="hidden sm:inline-flex">
             <Link to="/book">Book Appointment</Link>
           </Button>
@@ -83,6 +105,14 @@ export function Header() {
                 {n.label}
               </Link>
             ))}
+            {!loading && !user && (
+              <>
+                <Link to="/login" className="border-b border-border/60 py-4 font-serif text-3xl">Login</Link>
+                <Link to="/signup" className="border-b border-border/60 py-4 font-serif text-3xl">Signup</Link>
+              </>
+            )}
+            {user && isAdmin && <Link to="/admin" className="border-b border-border/60 py-4 font-serif text-3xl">Appointments</Link>}
+            {user && <button onClick={logout} className="border-b border-border/60 py-4 text-left font-serif text-3xl">Logout</button>}
             <Button asChild variant="luxe" size="xl" className="mt-6">
               <Link to="/book">Book Appointment</Link>
             </Button>
