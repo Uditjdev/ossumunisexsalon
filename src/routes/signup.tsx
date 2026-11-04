@@ -29,10 +29,10 @@ function SignupPage() {
 
   async function submit(e: FormEvent) {
     e.preventDefault();
-    if (f.name.trim().length < 2) return toast.error("Enter your full name");
-    if (!/^\S+@\S+\.\S+$/.test(f.email)) return toast.error("Enter a valid email");
-    if (f.password.length < 8) return toast.error("Password must be at least 8 characters");
-    if (f.password !== f.confirm) return toast.error("Passwords do not match");
+    if (f.name.trim().length < 2) { toast.error("Enter your full name"); return; }
+    if (!/^\S+@\S+\.\S+$/.test(f.email)) { toast.error("Enter a valid email"); return; }
+    if (f.password.length < 8) { toast.error("Password must be at least 8 characters"); return; }
+    if (f.password !== f.confirm) { toast.error("Passwords do not match"); return; }
     setBusy(true);
     const { error } = await supabase.auth.signUp({
       email: f.email,
@@ -40,7 +40,7 @@ function SignupPage() {
       options: { emailRedirectTo: window.location.origin, data: { full_name: f.name.trim() } },
     });
     setBusy(false);
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     setSent(true);
   }
 

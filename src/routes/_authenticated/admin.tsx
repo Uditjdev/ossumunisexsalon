@@ -50,7 +50,7 @@ function AdminPage() {
 
   async function setStatus(id: string, status: Status) {
     const { error } = await supabase.from("appointments").update({ status }).eq("id", id);
-    if (error) return toast.error("Could not update: " + error.message);
+    if (error) { toast.error("Could not update: " + error.message); return; }
     toast.success(`Marked ${status}`);
     qc.invalidateQueries({ queryKey: ["admin-appointments"] });
   }

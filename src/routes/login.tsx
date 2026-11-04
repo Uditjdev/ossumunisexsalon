@@ -29,12 +29,12 @@ function LoginPage() {
 
   async function submit(e: FormEvent) {
     e.preventDefault();
-    if (!/^\S+@\S+\.\S+$/.test(email)) return toast.error("Enter a valid email");
-    if (password.length < 6) return toast.error("Password must be at least 6 characters");
+    if (!/^\S+@\S+\.\S+$/.test(email)) { toast.error("Enter a valid email"); return; }
+    if (password.length < 6) { toast.error("Password must be at least 6 characters"); return; }
     setBusy(true);
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     setBusy(false);
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     const { data: admin } = await supabase.rpc("has_role", { _user_id: data.user.id, _role: "admin" });
     toast.success("Welcome back");
     navigate({ to: admin ? "/admin" : "/" });
