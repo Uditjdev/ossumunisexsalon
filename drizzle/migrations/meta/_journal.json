@@ -15,6 +15,13 @@
       "when": 1793790826151,
       "tag": "0001_admin_roles",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1793854386023,
+      "tag": "0002_clients_read_own_appointments",
+      "breakpoints": true
     }
   ]
 }
