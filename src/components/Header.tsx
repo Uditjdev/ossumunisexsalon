@@ -29,7 +29,7 @@ export function Header() {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const overHero = !scrolled && !["/book", "/login", "/signup", "/admin"].includes(pathname) && !open;
+  const overHero = !scrolled && !["/book", "/login", "/signup", "/admin", "/my-bookings"].includes(pathname) && !open;
   const { user, isAdmin, loading } = useAuth();
   const navigate = useNavigate();
   const qc = useQueryClient();
@@ -82,6 +82,7 @@ export function Header() {
               </>
             )}
             {user && isAdmin && <Link to="/admin" className="hover:opacity-100" activeProps={{ className: "!opacity-100 underline underline-offset-8 decoration-champagne" }}>Appointments</Link>}
+            {user && !isAdmin && <Link to="/my-bookings" className="hover:opacity-100" activeProps={{ className: "!opacity-100 underline underline-offset-8 decoration-champagne" }}>My Bookings</Link>}
             {user && <button onClick={logout} className="uppercase tracking-[0.22em] hover:opacity-100">Logout</button>}
           </div>
           <Button asChild variant={overHero ? "champagne" : "luxe"} size="lg" className="hidden sm:inline-flex">
@@ -112,6 +113,7 @@ export function Header() {
               </>
             )}
             {user && isAdmin && <Link to="/admin" className="border-b border-border/60 py-4 font-serif text-3xl">Appointments</Link>}
+            {user && !isAdmin && <Link to="/my-bookings" className="border-b border-border/60 py-4 font-serif text-3xl">My Bookings</Link>}
             {user && <button onClick={logout} className="border-b border-border/60 py-4 text-left font-serif text-3xl">Logout</button>}
             <Button asChild variant="luxe" size="xl" className="mt-6">
               <Link to="/book">Book Appointment</Link>
